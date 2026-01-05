@@ -8,7 +8,9 @@
     // See also https://aka.ms/tsconfig/module
     "module": "commonjs",
     "target": "es2016",
-    "types": ["jest"],
+    "types": [
+      "jest"
+    ],
     // Stricter Typechecking Options
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
@@ -20,7 +22,7 @@
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-    "skipLibCheck": false,
+    "skipLibCheck": true,
   },
   "exclude": ["__tests__"]
 }
