@@ -1,0 +1,218 @@
+paths:
+    /videos:
+        get: 
+            summary: Get a list of all videos
+            tags: [Videos]
+            responses: 
+                '200':
+                    description: List of all videos
+                    content: 
+                        application/json: 
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/Video'
+        post:
+            summary: Add a new video
+            tags: [Videos]
+            requestBody:
+                required: true
+                content: 
+                    application/json: 
+                        schema: 
+                            $ref: '#/components/schemas/CreateInputVideo'
+            responses: 
+                '201':
+                    description: The video was successfully created
+                    content: 
+                        application/json: 
+                            schema: 
+                                $ref: '#/components/schemas/Video'
+                '400':
+                    $ref: '#/components/responses/ValidationErrorResponse'
+    /videos/{id}:
+        get:
+            summary: Get a video by id
+            tags: [Videos]
+            parameters:
+                - $ref: "#/components/parameters/VideoIdPathParam"
+            responses: 
+                '200':
+                    description: The requested video
+                    content:
+                        application/json: 
+                            schema: 
+                                $ref: '#/components/schemas/Video'
+                '404':
+                    $ref: '#/components/responses/VideoNotFoundResponse'
+        put:
+            summary: Update a video by id
+            tags: [Videos]
+            parameters:
+                - $ref: "#/components/parameters/VideoIdPathParam"
+            requestBody:
+                required: true
+                content: 
+                    application/json: 
+                        schema: 
+                            $ref: '#/components/schemas/UpdateInputVideo'
+            responses: 
+                '204':
+                    description: Video updated successfully
+                '400':
+                    $ref: '#/components/responses/ValidationErrorResponse'
+                '404':
+                    $ref: '#/components/responses/VideoNotFoundResponse'
+        delete: 
+            summary: Delete a video by id
+            tags: [Videos]
+            parameters:
+                - $ref: "#/components/parameters/VideoIdPathParam"
+            responses: 
+                '204':
+                    description: Video deleted successfully
+                '404':
+                    $ref: '#/components/responses/VideoNotFoundResponse'
+              
+components:
+    schemas: 
+        VideoResolutions:
+            type: string
+            enum: 
+              - P144
+              - P240
+              - P360
+              - P480
+              - P720
+              - P1080
+              - P1440
+              - P2160
+
+        Video:
+            type: object
+            required: 
+                - id
+                - title
+                - author
+                - canBeDownloaded
+                - minAgeRestriction
+                - createdAt
+                - publicationDate
+                - availableResolutions
+            properties:
+                id:
+                    type: integer
+                    format: int32
+                    description: "The unique identifier for the video"
+                    example: 1
+                title:
+                    type: string
+                    description: "The title of the video"
+                    example: "How create Node JS express app?"
+                author:
+                    type: string
+                    description: "The video author name"
+                    example: "Andrey"
+                canBeDownloaded:
+                    type: boolean
+                    description: "The availability flag of download video"
+                minAgeRestriction:
+                    type: number
+                    nullable: true
+                    description: "The age restriction for video. If null - not restrict"
+                createdAt:
+                    type: string
+                    description: "The date of the create video"
+                    format: date-time
+                    example: "2026-01-05T11:08:04.472Z"
+                publicationDate:
+                    type: string
+                    description: "The date of the publication video"
+                    format: date-time
+                    example: "2026-01-06T11:08:04.472Z"
+                availableResolutions:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/VideoResolutions"
+        CreateInputVideo:
+            type: object
+            required: 
+              - title
+              - author
+              - availableResolutions
+            properties:
+                title:
+                    type: string
+                    maxLength: 40
+                    description: "The title of the video"
+                    example: "How create Node JS express app?"
+                author:
+                    type: string
+                    maxLength: 20
+                    description: "The video author name"
+                    example: "Andrey"
+                availableResolutions:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/VideoResolutions"
+        UpdateInputVideo:
+            allOf: 
+              - $ref: '#/components/schemas/CreateInputVideo'
+            type: object
+            required: 
+                - canBeDownloaded
+                - minAgeRestriction
+                - publicationDate
+            properties:
+                canBeDownloaded:
+                    type: boolean
+                    description: "The availability flag of download video"
+                minAgeRestriction:
+                    type: number
+                    nullable: true
+                    minimum: 1
+                    maximum: 18
+                    description: "The age restriction for video. If null - not restrict"
+                publicationDate:
+                    type: string
+                    description: "The date of the publication video"
+                    format: date-time
+                    example: "2026-01-06T11:08:04.472Z"
+        ValidationFieldError:
+            type: object
+            required: 
+                - field
+                - message
+            properties: 
+                field:
+                    type: string
+                message:
+                    type: string
+        APIErrorResult:
+            type: object
+            required: 
+                - errorsMessages
+            properties: 
+                errorsMessages:
+                    type: array
+                    items: 
+                        $ref: '#/components/schemas/ValidationFieldError'
+    parameters:
+        VideoIdPathParam:
+            in: path
+            name: id
+            required: true
+            description: "The unique identifier of the video"
+            schema:
+                type: integer
+                format: int32
+                example: 2
+    responses: 
+        ValidationErrorResponse:
+            description: Validation error
+            content: 
+                application/json: 
+                    schema: 
+                        $ref: '#/components/schemas/APIErrorResult'
+        VideoNotFoundResponse:
+            description: The requested video not found by passed identifier

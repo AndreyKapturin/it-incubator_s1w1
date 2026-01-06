@@ -1,4 +1,5 @@
 export enum Routes {
   Videos = '/videos',
-  Testing = '/testing'
+  Testing = '/testing',
+  Docs = '/docs'
 }
