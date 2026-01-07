@@ -127,7 +127,7 @@ components:
                     example: "2026-01-05T11:08:04.472Z"
                 publicationDate:
                     type: string
-                    description: "The date of the publication video"
+                    description: "The date of the publication video. By default more than create date on 1 day"
                     format: date-time
                     example: "2026-01-06T11:08:04.472Z"
                 availableResolutions:
@@ -179,6 +179,7 @@ components:
                     format: date-time
                     example: "2026-01-06T11:08:04.472Z"
         ValidationFieldError:
+            description: Field validation error message
             type: object
             required: 
                 - field
@@ -189,6 +190,7 @@ components:
                 message:
                     type: string
         APIErrorResult:
+            description: Field validation errors messages
             type: object
             required: 
                 - errorsMessages

@@ -18,6 +18,8 @@ import {
 import { ISODateStringRegExp } from '../src/core/utils/dateUtils';
 import { numbersUtils } from '../src/core/utils/numbersUtils';
 import { objectsUtils } from '../src/core/utils/objectsUtils';
+import { ValidationFieldError } from '../src/core/commonTypes/validationError';
+import { APIErrorResult } from '../src/core/commonTypes/APIErrorResult';
 
 const api = {
   get(url: string) {
@@ -64,56 +66,77 @@ const createTestCase = (testDescribe: string, requestBody: object, expectedBody:
   return { testDescribe, requestBody, expectedBody };
 };
 
+const packErrors = (...errors: ValidationFieldError[]): APIErrorResult => {
+  return {
+    errorsMessages: errors,
+  };
+};
+
 const badCreateCases = [
   // for author
   createTestCase(
     'author not passed',
     objectsUtils.skipField(correctCreateInputVideo, 'author'),
-    validationErrorBuilder('author').notExist()
+    packErrors(validationErrorBuilder('author').notExist())
   ),
   createTestCase(
     'author type not string',
     { ...correctCreateInputVideo, author: 10 },
-    validationErrorBuilder('author').notString()
+    packErrors(validationErrorBuilder('author').notString())
   ),
   createTestCase(
     'author length more than max',
     { ...correctCreateInputVideo, author: 'a'.repeat(MAX_AUTHOR_LENGTH + 1) },
-    validationErrorBuilder('author').maxLength(MAX_AUTHOR_LENGTH)
+    packErrors(validationErrorBuilder('author').maxLength(MAX_AUTHOR_LENGTH))
   ),
 
   // for title
   createTestCase(
     'title not passed',
     objectsUtils.skipField(correctCreateInputVideo, 'title'),
-    validationErrorBuilder('title').notExist()
+    packErrors(validationErrorBuilder('title').notExist())
   ),
   createTestCase(
     'title type not string',
     { ...correctCreateInputVideo, title: 10 },
-    validationErrorBuilder('title').notString()
+    packErrors(validationErrorBuilder('title').notString())
   ),
   createTestCase(
     'title length more than max',
     { ...correctCreateInputVideo, title: 'a'.repeat(MAX_TITLE_LENGTH + 1) },
-    validationErrorBuilder('title').maxLength(MAX_TITLE_LENGTH)
+    packErrors(validationErrorBuilder('title').maxLength(MAX_TITLE_LENGTH))
   ),
 
   // for availableResolutions
   createTestCase(
     'availableResolutions not exist',
     objectsUtils.skipField(correctCreateInputVideo, 'availableResolutions'),
-    validationErrorBuilder('availableResolutions').notExist()
+    packErrors(validationErrorBuilder('availableResolutions').notExist())
   ),
   createTestCase(
     'availableResolutions is empty',
     { ...correctCreateInputVideo, availableResolutions: [] },
-    validationErrorBuilder('availableResolutions').empty()
+    packErrors(validationErrorBuilder('availableResolutions').empty())
   ),
   createTestCase(
     'availableResolutions has incorrect value',
     { ...correctCreateInputVideo, availableResolutions: ['bla-bla'] },
-    validationErrorBuilder('availableResolutions').hasIncorrectValue()
+    packErrors(validationErrorBuilder('availableResolutions').hasIncorrectValue())
+  ),
+
+  // for all
+  createTestCase(
+    'all data incorrect',
+    {
+      title: 10,
+      author: 'p'.repeat(MAX_AUTHOR_LENGTH + 1),
+      availableResolutions: [1440],
+    },
+    packErrors(
+      validationErrorBuilder('title').notString(),
+      validationErrorBuilder('author').maxLength(MAX_AUTHOR_LENGTH),
+      validationErrorBuilder('availableResolutions').hasIncorrectValue()
+    )
   ),
 ];
 
@@ -212,6 +235,14 @@ describe(`POST ${Routes.Videos}`, () => {
         });
       }
     })();
+
+    it('by default publicationDate more than createdAt date on 1 day', async () => {
+      const response = await api.post(Routes.Videos).send(correctCreateInputVideo);
+      expect(response.status).toBe(HttpStatus.Created);
+      const expectedPublicationDate = new Date(response.body.createdAt);
+      expectedPublicationDate.setDate(expectedPublicationDate.getDate() + 1);
+      expect(response.body.publicationDate).toEqual(expectedPublicationDate.toISOString());
+    });
   });
 
   describe(`should return ${HttpStatus.Bad_Request} and errors messages:`, () => {
@@ -220,9 +251,7 @@ describe(`POST ${Routes.Videos}`, () => {
         it(badCreateCase.testDescribe, async () => {
           const response = await api.post(Routes.Videos).send(badCreateCase.requestBody);
           expect(response.status).toBe(HttpStatus.Bad_Request);
-          expect(response.body).toEqual({
-            errorsMessages: [badCreateCase.expectedBody],
-          });
+          expect(response.body).toEqual(badCreateCase.expectedBody);
         });
       }
     })();
@@ -285,102 +314,127 @@ const badUpdateCases = [
   createTestCase(
     'author not passed',
     objectsUtils.skipField(correctUpdareInputVideo, 'author'),
-    validationErrorBuilder('author').notExist()
+    packErrors(validationErrorBuilder('author').notExist())
   ),
   createTestCase(
     'author type not string',
     { ...correctUpdareInputVideo, author: 10 },
-    validationErrorBuilder('author').notString()
+    packErrors(validationErrorBuilder('author').notString())
   ),
   createTestCase(
     'author length more than max',
     { ...correctUpdareInputVideo, author: 'a'.repeat(MAX_AUTHOR_LENGTH + 1) },
-    validationErrorBuilder('author').maxLength(MAX_AUTHOR_LENGTH)
+    packErrors(validationErrorBuilder('author').maxLength(MAX_AUTHOR_LENGTH))
   ),
 
   // for title
   createTestCase(
     'title not passed',
     objectsUtils.skipField(correctUpdareInputVideo, 'title'),
-    validationErrorBuilder('title').notExist()
+    packErrors(validationErrorBuilder('title').notExist())
   ),
   createTestCase(
     'title type not string',
     { ...correctUpdareInputVideo, title: 10 },
-    validationErrorBuilder('title').notString()
+    packErrors(validationErrorBuilder('title').notString())
   ),
   createTestCase(
     'title length more than max',
     { ...correctUpdareInputVideo, title: 'a'.repeat(MAX_TITLE_LENGTH + 1) },
-    validationErrorBuilder('title').maxLength(MAX_TITLE_LENGTH)
+    packErrors(validationErrorBuilder('title').maxLength(MAX_TITLE_LENGTH))
   ),
 
   // for availableResolutions
   createTestCase(
     'availableResolutions not exist',
     objectsUtils.skipField(correctUpdareInputVideo, 'availableResolutions'),
-    validationErrorBuilder('availableResolutions').notExist()
+    packErrors(validationErrorBuilder('availableResolutions').notExist())
   ),
   createTestCase(
     'availableResolutions is empty',
     { ...correctUpdareInputVideo, availableResolutions: [] },
-    validationErrorBuilder('availableResolutions').empty()
+    packErrors(validationErrorBuilder('availableResolutions').empty())
   ),
   createTestCase(
     'availableResolutions has incorrect value',
     { ...correctUpdareInputVideo, availableResolutions: ['bla-bla'] },
-    validationErrorBuilder('availableResolutions').hasIncorrectValue()
+    packErrors(validationErrorBuilder('availableResolutions').hasIncorrectValue())
   ),
 
   // for canBeDownloaded
   createTestCase(
     'canBeDownloaded not exist',
     objectsUtils.skipField(correctUpdareInputVideo, 'canBeDownloaded'),
-    validationErrorBuilder('canBeDownloaded').notExist()
+    packErrors(validationErrorBuilder('canBeDownloaded').notExist())
   ),
   createTestCase(
     'canBeDownloaded is not boolean: pass 10',
     { ...correctUpdareInputVideo, canBeDownloaded: 10 },
-    validationErrorBuilder('canBeDownloaded').notBoolean()
+    packErrors(validationErrorBuilder('canBeDownloaded').notBoolean())
   ),
   createTestCase(
     'canBeDownloaded is not boolean: pass null',
     { ...correctUpdareInputVideo, canBeDownloaded: null },
-    validationErrorBuilder('canBeDownloaded').notBoolean()
+    packErrors(validationErrorBuilder('canBeDownloaded').notBoolean())
   ),
 
   // for minAgeRestriction
   createTestCase(
     'minAgeRestriction not exist',
     objectsUtils.skipField(correctUpdareInputVideo, 'minAgeRestriction'),
-    validationErrorBuilder('minAgeRestriction').notExist()
+    packErrors(validationErrorBuilder('minAgeRestriction').notExist())
   ),
   createTestCase(
     'minAgeRestriction has invalid type',
     { ...correctUpdareInputVideo, minAgeRestriction: '10' },
-    validationErrorBuilder('minAgeRestriction').notNumberOrNull()
+    packErrors(validationErrorBuilder('minAgeRestriction').notNumberOrNull())
   ),
   createTestCase(
     `minAgeRestriction out of range ${MIN_AGE_RESTRICTION} - ${MAX_AGE_RESTRICTION}`,
     { ...correctUpdareInputVideo, minAgeRestriction: MAX_AGE_RESTRICTION + 1 },
-    validationErrorBuilder('minAgeRestriction').outOfRange(MIN_AGE_RESTRICTION, MAX_AGE_RESTRICTION)
+    packErrors(
+      validationErrorBuilder('minAgeRestriction').outOfRange(
+        MIN_AGE_RESTRICTION,
+        MAX_AGE_RESTRICTION
+      )
+    )
   ),
 
   // for publicationDate
   createTestCase(
     'publicationDate not exist',
     objectsUtils.skipField(correctUpdareInputVideo, 'publicationDate'),
-    validationErrorBuilder('publicationDate').notExist()
+    packErrors(validationErrorBuilder('publicationDate').notExist())
   ),
   createTestCase(
     'publicationDate has invalid type: "10"',
     { ...correctUpdareInputVideo, publicationDate: '10' },
-    validationErrorBuilder('publicationDate').notIsoDateString()
+    packErrors(validationErrorBuilder('publicationDate').notIsoDateString())
   ),
   createTestCase(
     'publicationDate has invalid type: 2026',
     { ...correctUpdareInputVideo, publicationDate: 2026 },
-    validationErrorBuilder('publicationDate').notIsoDateString()
+    packErrors(validationErrorBuilder('publicationDate').notIsoDateString())
+  ),
+
+  // for all
+  createTestCase(
+    'all data incorrect',
+    {
+      title: 10,
+      author: 'p'.repeat(MAX_AUTHOR_LENGTH + 1),
+      availableResolutions: [1440],
+      canBeDownloaded: 10,
+      minAgeRestriction: '10'
+    },
+    packErrors(
+      validationErrorBuilder('title').notString(),
+      validationErrorBuilder('author').maxLength(MAX_AUTHOR_LENGTH),
+      validationErrorBuilder('availableResolutions').hasIncorrectValue(),
+      validationErrorBuilder('canBeDownloaded').notBoolean(),
+      validationErrorBuilder('minAgeRestriction').notNumberOrNull(),
+      validationErrorBuilder('publicationDate').notExist(),
+    )
   ),
 ];
 
@@ -410,9 +464,7 @@ describe(`PUT ${Routes.Videos}`, () => {
         it(badUpdateCase.testDescribe, async () => {
           const response = await api.put(`${Routes.Videos}/1`).send(badUpdateCase.requestBody);
           expect(response.status).toBe(HttpStatus.Bad_Request);
-          expect(response.body).toEqual({
-            errorsMessages: [badUpdateCase.expectedBody],
-          });
+          expect(response.body).toEqual(badUpdateCase.expectedBody);
           // check: video does't update in database
           const getResponse = await api.get(`${Routes.Videos}/1`);
           expect(getResponse.status).toBe(HttpStatus.Ok);

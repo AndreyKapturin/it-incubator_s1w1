@@ -41,11 +41,8 @@ videosRouter.post(
     }
 
     const createdAt = new Date();
-    const publicationDate = new Date(
-      createdAt.getFullYear(),
-      createdAt.getMonth(),
-      createdAt.getDate() + 1
-    ).toISOString();
+    const publicationDate = new Date();
+    publicationDate.setDate(publicationDate.getDate() + 1);
 
     const newVideo: VideoType = {
       id: generateId(database.videos),
@@ -55,7 +52,7 @@ videosRouter.post(
       canBeDownloaded: false,
       minAgeRestriction: null,
       createdAt: createdAt.toISOString(),
-      publicationDate: publicationDate.toString(),
+      publicationDate: publicationDate.toISOString(),
     };
 
     database.videos.push(newVideo);
