@@ -425,7 +425,7 @@ const badUpdateCases = [
       author: 'p'.repeat(MAX_AUTHOR_LENGTH + 1),
       availableResolutions: [1440],
       canBeDownloaded: 10,
-      minAgeRestriction: '10'
+      minAgeRestriction: '10',
     },
     packErrors(
       validationErrorBuilder('title').notString(),
@@ -433,7 +433,7 @@ const badUpdateCases = [
       validationErrorBuilder('availableResolutions').hasIncorrectValue(),
       validationErrorBuilder('canBeDownloaded').notBoolean(),
       validationErrorBuilder('minAgeRestriction').notNumberOrNull(),
-      validationErrorBuilder('publicationDate').notExist(),
+      validationErrorBuilder('publicationDate').notExist()
     )
   ),
 ];
@@ -477,7 +477,10 @@ describe(`PUT ${Routes.Videos}`, () => {
   describe(`should return ${HttpStatus.Not_Found} status code`, () => {
     it('if video not found', async () => {
       const notExistedVideoId = 9999999;
-      await api.put(`${Routes.Videos}/${notExistedVideoId}`).expect(HttpStatus.Not_Found);
+      await api
+        .put(`${Routes.Videos}/${notExistedVideoId}`)
+        .send(correctUpdareInputVideo)
+        .expect(HttpStatus.Not_Found);
     });
   });
 });

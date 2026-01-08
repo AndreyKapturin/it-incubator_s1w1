@@ -1,5 +1,4 @@
 import { Request, Response, Router } from 'express';
-import { database } from '../database';
 import { CreateInputVideoType, UpdateInputVideoType, VideoParamsId, VideoType } from './types';
 import { HttpStatus } from '../core/commonTypes/HttpStatus';
 import {
@@ -9,18 +8,18 @@ import {
 } from '../core/commonTypes/RequestTypes';
 import { createVideoValidation, updateVideoValidation } from './videosValidation';
 import { APIErrorResult } from '../core/commonTypes/APIErrorResult';
-import { generateId } from '../core/utils/generateId';
+import { videosRepoitory } from './videosRepository';
 
 const videosRouter = Router();
 
 videosRouter.get('/', (req: Request, res: Response<VideoType[]>) => {
-  const videos = database.videos;
+  const videos = videosRepoitory.findAll();
   res.status(HttpStatus.Ok).json(videos);
 });
 
 videosRouter.get('/:id', (req: RequestWithParams<VideoParamsId>, res: Response<VideoType>) => {
   const neededVideoId = Number(req.params.id);
-  const foundVideo = database.videos.find((v) => v.id === neededVideoId);
+  const foundVideo = videosRepoitory.findById(neededVideoId);
 
   if (!foundVideo) {
     res.sendStatus(HttpStatus.Not_Found);
@@ -40,22 +39,7 @@ videosRouter.post(
       return;
     }
 
-    const createdAt = new Date();
-    const publicationDate = new Date();
-    publicationDate.setDate(publicationDate.getDate() + 1);
-
-    const newVideo: VideoType = {
-      id: generateId(database.videos),
-      title: cleanData.title,
-      author: cleanData.author,
-      availableResolutions: cleanData.availableResolutions,
-      canBeDownloaded: false,
-      minAgeRestriction: null,
-      createdAt: createdAt.toISOString(),
-      publicationDate: publicationDate.toISOString(),
-    };
-
-    database.videos.push(newVideo);
+    const newVideo: VideoType = videosRepoitory.create(cleanData);
     res.status(HttpStatus.Created).json(newVideo);
   }
 );
@@ -67,13 +51,6 @@ videosRouter.put(
     res: Response<VideoType | APIErrorResult>
   ) => {
     const neededVideoId = Number(req.params.id);
-    const foundVideo = database.videos.find((v) => v.id === neededVideoId);
-
-    if (!foundVideo) {
-      res.sendStatus(HttpStatus.Not_Found);
-      return;
-    }
-
     const { cleanData, errors } = updateVideoValidation(req.body);
 
     if (errors.length !== 0) {
@@ -81,35 +58,15 @@ videosRouter.put(
       return;
     }
 
-    foundVideo.title = cleanData.title;
-    foundVideo.author = cleanData.author;
-    foundVideo.availableResolutions = cleanData.availableResolutions;
-    foundVideo.canBeDownloaded = cleanData.canBeDownloaded;
-    foundVideo.minAgeRestriction = cleanData.minAgeRestriction;
-    foundVideo.publicationDate = cleanData.publicationDate;
-
-    res.sendStatus(HttpStatus.No_Content);
+    const isUpdated = videosRepoitory.update(neededVideoId, cleanData);
+    res.sendStatus(isUpdated ? HttpStatus.No_Content : HttpStatus.Not_Found);
   }
 );
 
 videosRouter.delete('/:id', (req: RequestWithParams<VideoParamsId>, res: Response) => {
   const neededVideoId = Number(req.params.id);
-  let videoFounded = false;
-
-  database.videos = database.videos.filter((v) => {
-    if (v.id === neededVideoId) {
-      videoFounded = true;
-      return false;
-    }
-    return true;
-  });
-
-  if (!videoFounded) {
-    res.sendStatus(HttpStatus.Not_Found);
-    return;
-  }
-
-  res.sendStatus(HttpStatus.No_Content);
+  const isDeleted = videosRepoitory.delete(neededVideoId);
+  res.sendStatus(isDeleted ? HttpStatus.No_Content : HttpStatus.Not_Found);
 });
 
 export { videosRouter };
