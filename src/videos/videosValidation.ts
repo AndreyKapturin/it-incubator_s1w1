@@ -9,49 +9,47 @@ import { arrayUtils } from '../core/utils/arrayUtils';
 import { ISODateStringRegExp } from '../core/utils/dateUtils';
 import { numbersUtils } from '../core/utils/numbersUtils';
 import { validationErrorBuilder } from '../core/utils/validationErrorBuilder';
+import { ValidationCallbackType } from '../core/utils/validationMiddleware';
 import { AvailableResolutions, CreateInputVideoType, UpdateInputVideoType } from './types';
 
-type ValidationResult<T> = {
-  errors: ValidationFieldError[];
-  cleanData: T;
-};
-
-const createVideoValidation = (
-  inputVideo: CreateInputVideoType
-): ValidationResult<CreateInputVideoType> => {
+const createVideoValidation: ValidationCallbackType<CreateInputVideoType> = (inputVideo) => {
   const errors: ValidationFieldError[] = [];
-  const cleanData = { ...inputVideo };
+  const cleanBody = {
+    title: inputVideo.title,
+    author: inputVideo.author,
+    availableResolutions: inputVideo.availableResolutions,
+  };
 
-  if (cleanData.title === undefined) {
+  if (cleanBody.title === undefined) {
     errors.push(validationErrorBuilder('title').notExist());
-  } else if (typeof cleanData.title !== 'string') {
+  } else if (typeof cleanBody.title !== 'string') {
     errors.push(validationErrorBuilder('title').notString());
   } else if (
-    (cleanData.title = cleanData.title.trim()) &&
-    cleanData.title.length > MAX_TITLE_LENGTH
+    (cleanBody.title = cleanBody.title.trim()) &&
+    cleanBody.title.length > MAX_TITLE_LENGTH
   ) {
     errors.push(validationErrorBuilder('title').maxLength(MAX_TITLE_LENGTH));
   }
 
-  if (cleanData.author === undefined) {
+  if (cleanBody.author === undefined) {
     errors.push(validationErrorBuilder('author').notExist());
-  } else if (typeof cleanData.author !== 'string') {
+  } else if (typeof cleanBody.author !== 'string') {
     errors.push(validationErrorBuilder('author').notString());
   } else if (
-    (cleanData.author = cleanData.author.trim()) &&
-    cleanData.author.length > MAX_AUTHOR_LENGTH
+    (cleanBody.author = cleanBody.author.trim()) &&
+    cleanBody.author.length > MAX_AUTHOR_LENGTH
   ) {
     errors.push(validationErrorBuilder('author').maxLength(MAX_AUTHOR_LENGTH));
   }
 
-  if (cleanData.availableResolutions === undefined) {
+  if (cleanBody.availableResolutions === undefined) {
     errors.push(validationErrorBuilder('availableResolutions').notExist());
-  } else if (!Array.isArray(cleanData.availableResolutions)) {
+  } else if (!Array.isArray(cleanBody.availableResolutions)) {
     errors.push(validationErrorBuilder('availableResolutions').notArray());
-  } else if (cleanData.availableResolutions.length === 0) {
+  } else if (cleanBody.availableResolutions.length === 0) {
     errors.push(validationErrorBuilder('availableResolutions').empty());
-  } else if ((cleanData.availableResolutions = arrayUtils.unique(cleanData.availableResolutions))) {
-    for (const availableResolution of cleanData.availableResolutions) {
+  } else if ((cleanBody.availableResolutions = arrayUtils.unique(cleanBody.availableResolutions))) {
+    for (const availableResolution of cleanBody.availableResolutions) {
       if (!(availableResolution in AvailableResolutions)) {
         errors.push(validationErrorBuilder('availableResolutions').hasIncorrectValue());
         break;
@@ -59,46 +57,50 @@ const createVideoValidation = (
     }
   }
 
-  return { cleanData, errors };
+  return { cleanBody, errors };
 };
 
-const updateVideoValidation = (
-  inputVideo: UpdateInputVideoType
-): ValidationResult<UpdateInputVideoType> => {
+const updateVideoValidation: ValidationCallbackType<UpdateInputVideoType> = (inputVideo) => {
   const errors: ValidationFieldError[] = [];
-  const cleanData = { ...inputVideo };
+  const cleanBody = {
+    title: inputVideo.title,
+    author: inputVideo.author,
+    availableResolutions: inputVideo.availableResolutions,
+    canBeDownloaded: inputVideo.canBeDownloaded,
+    minAgeRestriction: inputVideo.minAgeRestriction,
+    publicationDate: inputVideo.publicationDate,
+  };
 
-  if (cleanData.title === undefined) {
+  if (cleanBody.title === undefined) {
     errors.push(validationErrorBuilder('title').notExist());
-  } else if (typeof cleanData.title !== 'string') {
+  } else if (typeof cleanBody.title !== 'string') {
     errors.push(validationErrorBuilder('title').notString());
   } else if (
-    (cleanData.title = cleanData.title.trim()) &&
-    cleanData.title.length > MAX_TITLE_LENGTH
+    (cleanBody.title = cleanBody.title.trim()) &&
+    cleanBody.title.length > MAX_TITLE_LENGTH
   ) {
     errors.push(validationErrorBuilder('title').maxLength(MAX_TITLE_LENGTH));
   }
 
-  if (cleanData.author === undefined) {
+  if (cleanBody.author === undefined) {
     errors.push(validationErrorBuilder('author').notExist());
-  } else if (typeof cleanData.author !== 'string') {
+  } else if (typeof cleanBody.author !== 'string') {
     errors.push(validationErrorBuilder('author').notString());
   } else if (
-    (cleanData.author = cleanData.author.trim()) &&
-    cleanData.author.length > MAX_AUTHOR_LENGTH
+    (cleanBody.author = cleanBody.author.trim()) &&
+    cleanBody.author.length > MAX_AUTHOR_LENGTH
   ) {
     errors.push(validationErrorBuilder('author').maxLength(MAX_AUTHOR_LENGTH));
   }
 
-
-  if (cleanData.availableResolutions === undefined) {
+  if (cleanBody.availableResolutions === undefined) {
     errors.push(validationErrorBuilder('availableResolutions').notExist());
-  } else if (!Array.isArray(cleanData.availableResolutions)) {
+  } else if (!Array.isArray(cleanBody.availableResolutions)) {
     errors.push(validationErrorBuilder('availableResolutions').notArray());
-  } else if (cleanData.availableResolutions.length === 0) {
+  } else if (cleanBody.availableResolutions.length === 0) {
     errors.push(validationErrorBuilder('availableResolutions').empty());
-  } else if ((cleanData.availableResolutions = arrayUtils.unique(cleanData.availableResolutions))) {
-    for (const availableResolution of cleanData.availableResolutions) {
+  } else if ((cleanBody.availableResolutions = arrayUtils.unique(cleanBody.availableResolutions))) {
+    for (const availableResolution of cleanBody.availableResolutions) {
       if (!(availableResolution in AvailableResolutions)) {
         errors.push(validationErrorBuilder('availableResolutions').hasIncorrectValue());
         break;
@@ -106,19 +108,22 @@ const updateVideoValidation = (
     }
   }
 
-  if (cleanData.canBeDownloaded === undefined) {
+  if (cleanBody.canBeDownloaded === undefined) {
     errors.push(validationErrorBuilder('canBeDownloaded').notExist());
-  } else if (typeof cleanData.canBeDownloaded !== 'boolean') {
+  } else if (typeof cleanBody.canBeDownloaded !== 'boolean') {
     errors.push(validationErrorBuilder('canBeDownloaded').notBoolean());
   }
 
-  if (cleanData.minAgeRestriction === undefined) {
+  if (cleanBody.minAgeRestriction === undefined) {
     errors.push(validationErrorBuilder('minAgeRestriction').notExist());
-  } else if (cleanData.minAgeRestriction !== null && typeof cleanData.minAgeRestriction !== 'number') {
+  } else if (
+    cleanBody.minAgeRestriction !== null &&
+    typeof cleanBody.minAgeRestriction !== 'number'
+  ) {
     errors.push(validationErrorBuilder('minAgeRestriction').notNumberOrNull());
   } else if (
-    typeof cleanData.minAgeRestriction === 'number' &&
-    numbersUtils.outRange(cleanData.minAgeRestriction, MIN_AGE_RESTRICTION, MAX_AGE_RESTRICTION)
+    typeof cleanBody.minAgeRestriction === 'number' &&
+    numbersUtils.outRange(cleanBody.minAgeRestriction, MIN_AGE_RESTRICTION, MAX_AGE_RESTRICTION)
   ) {
     errors.push(
       validationErrorBuilder('minAgeRestriction').outOfRange(
@@ -128,14 +133,13 @@ const updateVideoValidation = (
     );
   }
 
-  if (cleanData.publicationDate === undefined) {
+  if (cleanBody.publicationDate === undefined) {
     errors.push(validationErrorBuilder('publicationDate').notExist());
-    return { cleanData, errors };
-  } else if (!ISODateStringRegExp.test(cleanData.publicationDate)) {
+  } else if (!ISODateStringRegExp.test(cleanBody.publicationDate)) {
     errors.push(validationErrorBuilder('publicationDate').notIsoDateString());
   }
 
-  return { cleanData, errors };
+  return { cleanBody, errors };
 };
 
 export { createVideoValidation, updateVideoValidation };
