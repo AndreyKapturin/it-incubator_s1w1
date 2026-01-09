@@ -8,6 +8,7 @@ import {
   RequestWithParamsAndBody,
 } from '../core/commonTypes/RequestTypes';
 import { APIErrorResult } from '../core/commonTypes/APIErrorResult';
+import { generateId } from '../core/utils/generateId';
 
 const videosControllers = {
   getAllVideos(req: Request, res: Response<VideoType[]>) {
@@ -29,8 +30,24 @@ const videosControllers = {
     req: RequestWithBody<CreateInputVideoType>,
     res: Response<VideoType | APIErrorResult>
   ) {
-    const newVideo: VideoType = videosRepoitory.create(req.body);
-    res.status(HttpStatus.Created).json(newVideo);
+    const createdAt = new Date();
+    const publicationDate = new Date();
+    publicationDate.setDate(publicationDate.getDate() + 1);
+    const videos = videosRepoitory.findAll();
+
+    const newVideo: VideoType = {
+      id: generateId(videos),
+      title: req.body.title,
+      author: req.body.author,
+      availableResolutions: req.body.availableResolutions,
+      canBeDownloaded: false,
+      minAgeRestriction: null,
+      createdAt: createdAt.toISOString(),
+      publicationDate: publicationDate.toISOString(),
+    };
+
+    const createdVideo = videosRepoitory.create(newVideo);
+    res.status(HttpStatus.Created).json(createdVideo);
   },
   updateVideo(
     req: RequestWithParamsAndBody<VideoParamsId, UpdateInputVideoType>,

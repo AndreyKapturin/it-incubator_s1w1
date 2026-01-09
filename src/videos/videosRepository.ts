@@ -1,6 +1,5 @@
-import { generateId } from '../core/utils/generateId';
 import { database } from '../database';
-import { CreateInputVideoType, UpdateInputVideoType, VideoType } from './types';
+import { UpdateInputVideoType, VideoType } from './types';
 
 const videosRepoitory = {
   findAll(): VideoType[] {
@@ -9,22 +8,7 @@ const videosRepoitory = {
   findById(id: number): VideoType | null {
     return database.videos.find((v) => v.id === id) ?? null;
   },
-  create(createInputVideo: CreateInputVideoType): VideoType {
-    const createdAt = new Date();
-    const publicationDate = new Date();
-    publicationDate.setDate(publicationDate.getDate() + 1);
-
-    const newVideo: VideoType = {
-      id: generateId(database.videos),
-      title: createInputVideo.title,
-      author: createInputVideo.author,
-      availableResolutions: createInputVideo.availableResolutions,
-      canBeDownloaded: false,
-      minAgeRestriction: null,
-      createdAt: createdAt.toISOString(),
-      publicationDate: publicationDate.toISOString(),
-    };
-
+  create(newVideo: VideoType): VideoType {
     database.videos.push(newVideo);
     return newVideo;
   },
